@@ -1,6 +1,6 @@
 import unittest
 
-from hf_session import HFSession, HFSessionList
+from OpenHFDS.hf_session import HFSession, HFSessionList
 
 
 def session(host: str, **kwargs) -> HFSession:

@@ -2,8 +2,8 @@ import contextlib
 import io
 import unittest
 
-from hf_session import DEFAULT_MAX_ENTRIES, DEFAULT_TTL
-from openhfds import DEFAULT_BIND, DEFAULT_PORT, parse_args
+from OpenHFDS.hf_session import DEFAULT_MAX_ENTRIES, DEFAULT_TTL
+from OpenHFDS.cli import DEFAULT_BIND, DEFAULT_PORT, parse_args
 
 
 def rejected(*argv: str) -> str:

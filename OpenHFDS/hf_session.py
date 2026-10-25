@@ -1,9 +1,10 @@
 import time
 from dataclasses import dataclass, field, fields, Field
-from logger import Logger
+from OpenHFDS.logger import Logger
 
 DEFAULT_TTL = 600  # seconds before a silent host is dropped; the client re-sends "set" every 180 s
 DEFAULT_MAX_ENTRIES = 0x1000  # client's HFDS_MAX_ENTRIES
+CLIENT_HEARTBEAT_SECONDS = 180  # how often the game re-sends "set" while hosting
 
 
 @dataclass

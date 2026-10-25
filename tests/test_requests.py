@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from hf_client_request import (
+from OpenHFDS.hf_client_request import (
     HF_CLIENT_FIELD_MAX,
     HFUnknownClientRequest,
     decode_hf_udp,
@@ -10,7 +10,7 @@ from hf_client_request import (
     handle_info,
     handle_set,
 )
-from hf_session import HFSessionList
+from OpenHFDS.hf_session import HFSessionList
 
 # The client parses these with sscanf; the patterns mirror its format strings:
 #   "info %d %d %d %d %d" and "get %d %s %s %s %s %d %d %d %s"

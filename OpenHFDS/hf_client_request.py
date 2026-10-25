@@ -1,5 +1,5 @@
-from logger import log_received_udp_data, log_sent_udp_data, Logger
-from hf_session import HFSessionList, HFSession
+from OpenHFDS.logger import log_received_udp_data, log_sent_udp_data, Logger
+from OpenHFDS.hf_session import HFSessionList, HFSession
 from collections.abc import Callable
 import socket
 
