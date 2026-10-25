@@ -1,0 +1,36 @@
+[project]
+name = "OpenHFDS"
+dynamic = ["version"]
+requires-python = ">=3.10"
+description = "An open implementation of HellFighter Directory Server"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Tyler Porter", email = "tyler.b.porter@gmail.com" },
+]
+keywords = [
+
+]
+classifiers = [
+    "Development Status :: 3 - Apha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Other Audience",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Other/Nonlisted Topic",
+]
+
+[project.urls]
+Homepage = "https://github.com/ty-porter/OpenHFDS"
+
+[tool.black]
+target-version = ["py310"]
+
+[dependency-groups]
+dev = [
+    "black",
+    "mypy"
+]
