@@ -6,6 +6,8 @@ OpenHFDS is an open-source session directory server for HellFighter v21.0+ clien
 
 OpenHFDS implements the custom UDP protocol needed to search for HellFighter sessions to enable easy network play.
 
+![Server browser populated by OpenHFDS](assets/server_browser.png)
+
 ## Installation
 
 OpenHFDS is dependency-free and only requires Python 3.11 or newer. Installation is as simple as obtaining the source code for this repo and running `python openhfds.py`.
@@ -48,7 +50,7 @@ Players only appear in the list once their game has registered, and a host's lis
 ### All CLI Flags
 
 ```
-usage: openhfds [-h] [--bind ADDRESS] [--port PORT] [--ttl SECONDS] [--max-entries COUNT] [--log-level {DEBUG,INFO,WARNING,ERROR}]
+usage: openhfds [-h] [--bind ADDRESS] [--port PORT] [--ttl SECONDS] [--max-entries COUNT] [--spoof COUNT] [--log-level {DEBUG,INFO,WARNING,ERROR}]
 
 HellFighter directory server: lists hosted game sessions for the game's server browser.
 
@@ -58,6 +60,7 @@ options:
   --port PORT           UDP port to listen on; the game itself always uses 10666 (default: 10666)
   --ttl SECONDS         drop a host after this long without a 'set'; by default the game sends one every 180s (default: 600)
   --max-entries COUNT   most sessions to list; the game can't hold more than 4096 (default: 4096)
+  --spoof COUNT         start with this many made-up sessions, to try out the game's server browser; they can't be joined and expire after --ttl (default: 0)
   --log-level {DEBUG,INFO,WARNING,ERROR}
                         logging verbosity; INFO includes every packet received and sent (default: INFO)
 ```

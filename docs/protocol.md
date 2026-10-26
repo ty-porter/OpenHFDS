@@ -10,6 +10,7 @@ There was never any public documentation for it. Everything here comes from deco
 - Messages are plain ASCII, space separated, and one message is one datagram.
 - The client uses a single MFC `CAsyncSocket` bound to port 0. Its source port is ephemeral, so a server can't identify a host by `IP:port`. OpenHFDS identifies a host by IP address alone.
 - The client parses replies with `sscanf`, and `%s` stops at whitespace. A name with a space in it would break the parse, so the client swaps spaces for underscores before sending, and swaps them back for display. This only happens for `name`, `location`, and `connection`.
+- **Replies need to end with a NUL byte (`\x00`).** The client receives every datagram into one global 4096-byte buffer, reuses it for the next one, and never clears or terminates it. `sscanf` just reads until it finds a NUL, so a reply that's shorter than the one before it keeps reading into the leftovers. `version` is the last field of a `get` record, so that's where it shows up: `v21.01` becomes something like `v21.01v21.01`. Since `version` goes into a fixed 64-byte slot, enough leftovers can also overflow it. The client doesn't terminate what it _sends_ (the `set` I captured has no NUL), so I can't say what the original server did, but it must have sent one for real hosts to have looked right.
 
 ## Messages
 
@@ -110,6 +111,7 @@ Boiled down, a server for this client needs to:
 - Keep a session alive for longer than 180 seconds between `set` messages. OpenHFDS defaults to 600 so one dropped packet doesn't make a host vanish.
 - Truncate every string field to 63 characters.
 - Answer `info` with exactly five integers.
+- End every reply (`info` and `get`) with a NUL byte, so the client's unterminated receive buffer doesn't leak the previous reply into this one.
 
 OpenHFDS also does a few things the original probably didn't need to, like ignoring junk datagrams instead of crashing and clamping `get` ranges to the real session count so nobody can ask for four billion IDs.
 

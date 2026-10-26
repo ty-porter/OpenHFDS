@@ -80,14 +80,14 @@ class ServerProcessTests(ServerProcessTestCase):
     def test_register_list_and_remove(self):
         self.send(b"set Hell_Fighter_Server Unknown Unknown 1 24 0 v21.01")
 
-        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0"])
+        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0\0"])
         self.assertEqual(
             self.ask(b"get 0 0"),
-            [b"get 0 127.0.0.1 Hell_Fighter_Server Unknown Unknown 1 24 0 v21.01"],
+            [b"get 0 127.0.0.1 Hell_Fighter_Server Unknown Unknown 1 24 0 v21.01\0"],
         )
 
         self.send(b"delete me")
-        self.assertEqual(self.ask(b"info"), [b"info 0 0 0 0 0"])
+        self.assertEqual(self.ask(b"info"), [b"info 0 0 0 0 0\0"])
 
     def test_survives_junk_and_malformed_requests(self):
         for packet in [
@@ -100,20 +100,20 @@ class ServerProcessTests(ServerProcessTestCase):
         ]:
             self.send(packet)
 
-        self.assertEqual(self.ask(b"info"), [b"info 0 0 0 0 0"])
+        self.assertEqual(self.ask(b"info"), [b"info 0 0 0 0 0\0"])
         self.assertIsNone(self.proc.poll(), "server exited")
 
     def test_survives_a_client_that_closed_before_the_reply(self):
         # Windows raises ConnectionResetError from recvfrom after sending to a closed UDP port.
         self.send(b"set A Unknown Unknown 1 24 0 v21.01")
-        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0"])
+        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0\0"])
 
         gone = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         gone.sendto(b"get 0 0", self.addr)
         gone.close()
         time.sleep(0.3)
 
-        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0"])
+        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0\0"])
         self.assertIsNone(self.proc.poll(), "server exited")
 
     def test_junk_is_logged_as_a_warning_not_a_traceback(self):
@@ -139,15 +139,28 @@ class MaxEntriesOptionTests(ServerProcessTestCase):
 
     def test_second_host_is_refused(self):
         self.send(b"set First Unknown Unknown 1 24 0 v21.01")
-        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0"])
+        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0\0"])
 
         other = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.addCleanup(other.close)
         other.bind(("127.0.0.2", 0))  # a different source IP, so a different host
         other.sendto(b"set Second Unknown Unknown 1 24 0 v21.01", self.addr)
 
-        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0"])
+        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0\0"])
         self.assertEqual(len(self.ask(b"get 0 5")[0].split(b" ")), 10)
+
+
+class SpoofOptionTests(ServerProcessTestCase):
+    server_args = ["--spoof", "3"]
+
+    def test_starts_with_made_up_sessions_that_a_client_can_fetch(self):
+        self.assertEqual(self.ask(b"info"), [b"info 3 0 0 0 0\0"])
+
+        records = self.ask(b"get 0 2", replies=3)
+
+        self.assertEqual([int(r.split(b" ")[1]) for r in records], [0, 1, 2])
+        for record in records:
+            self.assertEqual(len(record.split(b" ")), 10)
 
 
 class TtlOptionTests(ServerProcessTestCase):
@@ -155,12 +168,12 @@ class TtlOptionTests(ServerProcessTestCase):
 
     def test_silent_host_expires(self):
         self.send(b"set Shortlived Unknown Unknown 1 24 0 v21.01")
-        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0"])
+        self.assertEqual(self.ask(b"info"), [b"info 1 0 0 0 0\0"])
 
         deadline = time.time() + 6
         while time.time() < deadline:
             time.sleep(0.5)
-            if self.ask(b"info") == [b"info 0 0 0 0 0"]:
+            if self.ask(b"info") == [b"info 0 0 0 0 0\0"]:
                 break
         else:
             self.fail("host never expired")

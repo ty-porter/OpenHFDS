@@ -4,6 +4,7 @@ from collections.abc import Callable
 import socket
 
 HF_REQUEST_FIELD_SEPARATOR = " "
+HF_REPLY_TERMINATOR = b"\0"
 HF_CLIENT_FIELD_MAX = (
     63  # client reads each %s into a 64-byte buffer with no bounds check
 )
@@ -115,5 +116,8 @@ def handle_delete(
 
 
 def _send(sock: socket.socket, data: bytes, addr: tuple[str, int]) -> None:
+    # The client expects a null-terminated string for anything sent to it,
+    # although it is not so kind to do that to its own requests.
+    data += HF_REPLY_TERMINATOR
     log_sent_udp_data(data, addr)
     sock.sendto(data, addr)

@@ -28,6 +28,7 @@ class DefaultsTests(unittest.TestCase):
         self.assertEqual(args.ttl, 600)
         self.assertEqual(args.max_entries, 0x1000)
         self.assertEqual(args.log_level, "INFO")
+        self.assertEqual(args.spoof, 0)
 
     def test_defaults_come_from_the_module_constants(self):
         args = parse_args([])
@@ -50,6 +51,8 @@ class OptionTests(unittest.TestCase):
                 "900",
                 "--max-entries",
                 "64",
+                "--spoof",
+                "10",
                 "--log-level",
                 "warning",
             ]
@@ -59,6 +62,7 @@ class OptionTests(unittest.TestCase):
         self.assertEqual(args.port, 12345)
         self.assertEqual(args.ttl, 900)
         self.assertEqual(args.max_entries, 64)
+        self.assertEqual(args.spoof, 10)
         self.assertEqual(args.log_level, "WARNING")
 
     def test_log_level_is_case_insensitive(self):
@@ -93,6 +97,14 @@ class RejectionTests(unittest.TestCase):
         for value in ["0", "-1", "4097", "100000", "abc"]:
             with self.subTest(value=value):
                 self.assertIn("--max-entries", rejected("--max-entries", value))
+
+    def test_spoof_must_be_between_zero_and_what_the_client_can_hold(self):
+        self.assertEqual(parse_args(["--spoof", "0"]).spoof, 0)
+        self.assertEqual(parse_args(["--spoof", "4096"]).spoof, 4096)
+
+        for value in ["-1", "4097", "abc"]:
+            with self.subTest(value=value):
+                self.assertIn("--spoof", rejected("--spoof", value))
 
     def test_unknown_log_level(self):
         self.assertIn("--log-level", rejected("--log-level", "chatty"))

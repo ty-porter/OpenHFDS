@@ -56,6 +56,10 @@ def main(argv: list[str] | None = None) -> int:
         f"Listening on {args.bind}:{args.port} (ttl {args.ttl}s, up to {args.max_entries} sessions)"
     )
 
+    if args.spoof:
+        sessions.spoof(args.spoof)
+        Logger.info(f"Spoofed {sessions.count} sessions")
+
     try:
         serve(sock, sessions)
     except KeyboardInterrupt:

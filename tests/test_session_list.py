@@ -105,6 +105,34 @@ class HFSessionListTests(unittest.TestCase):
 
         self.assertEqual(sl.count, 0)
 
+    def test_spoof_adds_the_requested_number_of_unique_sessions(self):
+        sl = HFSessionList()
+        sl.add(session("10.200.0.0"))  # already taken, so spoof has to skip it
+
+        sl.spoof(5, seed=1)
+
+        self.assertEqual(sl.count, 6)
+        self.assertEqual(len({sl.get_by_id(i).hostname for i in range(6)}), 6)
+
+    def test_spoof_stops_at_max_entries(self):
+        sl = HFSessionList(max_entries=3)
+
+        sl.spoof(10)
+
+        self.assertEqual(sl.count, 3)
+
+    def test_spoofed_sessions_fit_the_clients_record_format(self):
+        sl = HFSessionList()
+
+        sl.spoof(50, seed=1)
+
+        for i in range(50):
+            s = sl.get_by_id(i)
+            with self.subTest(i=i):
+                self.assertLessEqual(s.current_players, s.max_players)
+                for value in (s.hostname, s.name, s.location, s.connection, s.version):
+                    self.assertRegex(value, r"^\S{1,63}$")
+
     def test_max_entries_is_enforced_and_logged(self):
         sl = HFSessionList(max_entries=2)
         sl.add(session("10.0.0.1"))

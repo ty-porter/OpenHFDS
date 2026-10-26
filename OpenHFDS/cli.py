@@ -59,6 +59,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=f"most sessions to list; the game can't hold more than {DEFAULT_MAX_ENTRIES} (default: %(default)s)",
     )
     parser.add_argument(
+        "--spoof",
+        type=_int_in_range("spoof", 0, DEFAULT_MAX_ENTRIES),
+        default=0,
+        metavar="COUNT",
+        help="start with this many made-up sessions, to try out the game's server browser; "
+        "they can't be joined and expire after --ttl (default: %(default)s)",
+    )
+    parser.add_argument(
         "--log-level",
         type=str.upper,
         choices=LOG_LEVELS,

@@ -14,9 +14,10 @@ from OpenHFDS.hf_session import HFSessionList
 
 # The client parses these with sscanf; the patterns mirror its format strings:
 #   "info %d %d %d %d %d" and "get %d %s %s %s %s %d %d %d %s"
-INFO_REPLY = re.compile(rb"^info (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)$")
+#   Replies end with a NUL, because the client never terminates what it receives.
+INFO_REPLY = re.compile(rb"^info (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)\x00$")
 GET_RECORD = re.compile(
-    rb"^get (-?\d+) (\S+) (\S+) (\S+) (\S+) (-?\d+) (-?\d+) (-?\d+) (\S+)$"
+    rb"^get (-?\d+) (\S+) (\S+) (\S+) (\S+) (-?\d+) (-?\d+) (-?\d+) ([^\s\x00]+)\x00$"
 )
 
 # A real packet captured from the game client.
@@ -86,12 +87,12 @@ class InfoTests(RequestTestCase):
 
         (payload,) = self.sock.payloads
         self.assertRegex(payload, INFO_REPLY)
-        self.assertEqual(payload, b"info 3 0 0 0 0")
+        self.assertEqual(payload, b"info 3 0 0 0 0\0")
 
     def test_empty_list_reports_zero(self):
         handle_info("info", self.sessions, self.sock, HOST)
 
-        self.assertEqual(self.sock.payloads, [b"info 0 0 0 0 0"])
+        self.assertEqual(self.sock.payloads, [b"info 0 0 0 0 0\0"])
 
     def test_reply_goes_back_to_the_requester(self):
         handle_info("info", self.sessions, self.sock, HOST)
@@ -210,7 +211,8 @@ class GetTests(RequestTestCase):
         (record,) = self.get("get 0 0")
 
         self.assertEqual(
-            record, b"get 0 10.0.0.1 Hell_Fighter_Server Unknown Unknown 1 24 0 v21.01"
+            record,
+            b"get 0 10.0.0.1 Hell_Fighter_Server Unknown Unknown 1 24 0 v21.01\x00",
         )
 
     def test_record_matches_the_clients_scanf_format(self):
@@ -279,6 +281,38 @@ class GetTests(RequestTestCase):
         records = self.get("get 0 1")
 
         self.assertEqual([int(r.split(b" ")[1]) for r in records], [0, 1])
+
+
+class ClientReceiveBufferTests(RequestTestCase):
+    """The client receives every datagram into one reused buffer and never terminates it, so sscanf reads on into whatever an earlier, longer reply left behind."""
+
+    def parse_versions(self, payloads):
+        buffer = bytearray(0x1000)
+        versions = []
+        for payload in payloads:
+            buffer[: len(payload)] = payload
+            text = bytes(buffer).split(b"\x00", 1)[0]  # sscanf stops at the first NUL
+            versions.append(text.split()[-1])
+        return versions
+
+    def test_records_of_different_lengths_do_not_bleed_into_the_version(self):
+        self.sessions.spoof(12, seed=3)
+
+        versions = self.parse_versions(self.get("get 0 11"))
+
+        self.assertEqual(versions, [b"v21.01"] * 12)
+
+    def test_every_reply_is_terminated(self):
+        self.register(2)
+
+        replies = self.get("get 0 1")
+        handle_info("info", self.sessions, self.sock, HOST)
+        replies += self.sock.payloads[-1:]
+
+        self.assertEqual(len(replies), 3)
+        for reply in replies:
+            self.assertTrue(reply.endswith(b"\x00"))
+            self.assertEqual(reply.count(b"\x00"), 1)
 
 
 class DeleteTests(RequestTestCase):
