@@ -113,6 +113,8 @@ Boiled down, a server for this client needs to:
 
 OpenHFDS also does a few things the original probably didn't need to, like ignoring junk datagrams instead of crashing and clamping `get` ranges to the real session count so nobody can ask for four billion IDs.
 
+There's also some things it _doesn't_ do. It's not a sophisticated protocol and the `set` message functions both as an "add session" + "refresh session". Therefore, all the sessions are kept in memory and are volatile. A server crash just waits for the process to come back up and the next wave of `set` messages to arrive and refresh its session list.
+
 ## Open Questions
 
 - **The four extra `info` integers.** They're unused by this client, and I don't know what they were meant for.
