@@ -107,7 +107,6 @@ class SetTests(RequestTestCase):
         self.assertEqual(self.sessions.count, 1)
         self.assertEqual(
             (
-                s.ID,
                 s.hostname,
                 s.name,
                 s.location,
@@ -118,7 +117,6 @@ class SetTests(RequestTestCase):
                 s.version,
             ),
             (
-                0,
                 "10.0.0.1",
                 "Hell_Fighter_Server",
                 "Unknown",
@@ -168,8 +166,8 @@ class SetTests(RequestTestCase):
         self.register(3)
 
         self.assertEqual(
-            [self.sessions.get_by_hostname(f"10.0.0.{i + 1}").ID for i in range(3)],
-            [0, 1, 2],
+            [self.sessions.get_by_id(i).hostname for i in range(3)],
+            ["10.0.0.1", "10.0.0.2", "10.0.0.3"],
         )
 
     def test_long_strings_are_truncated_to_fit_the_clients_buffers(self):

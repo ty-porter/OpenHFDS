@@ -10,12 +10,12 @@ def session(host: str, **kwargs) -> HFSession:
 class HFSessionTests(unittest.TestCase):
     def test_visible_fields_match_the_wire_record_order(self):
         # The client reads: get ID hostname name location connection cur max flags version
+        # The ID is the session's position in the list, so handle_get writes it ahead of these.
         names = [f.name for f in HFSession.visible_fields(HFSession())]
 
         self.assertEqual(
             names,
             [
-                "ID",
                 "hostname",
                 "name",
                 "location",
@@ -53,9 +53,15 @@ class HFSessionListTests(unittest.TestCase):
             [sl.get_by_id(i).hostname for i in range(3)],
             ["10.0.0.0", "10.0.0.1", "10.0.0.2"],
         )
-        self.assertEqual(
-            [sl.get_by_hostname(f"10.0.0.{i}").ID for i in range(3)], [0, 1, 2]
-        )
+
+    def test_get_by_id_rejects_negative_and_out_of_range_ids(self):
+        sl = HFSessionList()
+        for i in range(3):
+            sl.add(session(f"10.0.0.{i}"))
+
+        for ID in (-1, -3, 3, 100):
+            with self.subTest(ID=ID):
+                self.assertIsNone(sl.get_by_id(ID))
 
     def test_add_of_a_known_host_is_ignored(self):
         sl = HFSessionList()
@@ -79,7 +85,6 @@ class HFSessionListTests(unittest.TestCase):
         self.assertEqual(sl.get_by_id(0).hostname, "10.0.0.0")
         self.assertEqual(sl.get_by_id(1).hostname, "10.0.0.2")
         self.assertIsNone(sl.get_by_id(2))
-        self.assertEqual(sl.get_by_hostname("10.0.0.2").ID, 1)
 
     def test_remove_of_an_unknown_session_is_a_noop(self):
         sl = HFSessionList()
@@ -138,7 +143,7 @@ class ExpireTests(unittest.TestCase):
         self.assertIsNone(sl.get_by_id(2))
 
     def test_expire_can_remove_every_session_at_once(self):
-        # Regression: removing renumbers the dicts, which used to break iteration.
+        # Regression: removing mutates the list while expire() is walking it, which used to break iteration.
         sl = HFSessionList(ttl=0)
         for i in range(5):
             sl.add(session(f"10.0.0.{i}"))

@@ -166,7 +166,7 @@ class TtlOptionTests(ServerProcessTestCase):
             self.fail("host never expired")
 
         self.stop_server()
-        self.assertIn("Expire: session 0 (127.0.0.1)", self.output)
+        self.assertIn("Expire: session <127.0.0.1>", self.output)
 
     def test_warns_that_the_ttl_is_shorter_than_the_clients_heartbeat(self):
         self.stop_server()

@@ -62,7 +62,8 @@ def handle_get(
             field_values = [
                 str(getattr(session, f.name)) for f in HFSession.visible_fields(session)
             ]
-            _send(sock, f"get {' '.join(field_values)}".encode("ascii"), addr)
+            # The ID is the session's position in the list, so it's written here and not stored on the session
+            _send(sock, f"get {ID} {' '.join(field_values)}".encode("ascii"), addr)
 
 
 def handle_set(

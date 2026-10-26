@@ -9,7 +9,6 @@ CLIENT_HEARTBEAT_SECONDS = 180  # how often the game re-sends "set" while hostin
 
 @dataclass
 class HFSession:
-    ID: int = -1  # the session list controls this ID via _renumber()
     hostname: str = "hfds.dracova.com"
     name: str = "Hell_Fighter_Server"
     location: str = "Unknown"
@@ -32,15 +31,21 @@ class HFSession:
 
 
 class HFSessionList:
+    """
+    The sessions currently listed.
+
+    A session's ID is its position in the list. The client asks for IDs 0..count-1 (count being the first "info" int)
+    and uses the ID in each record as its table index, so IDs have to stay contiguous. Removing a session shifts the
+    ones after it down, which keeps them that way.
+    """
+
     def __init__(
         self,
-        existing_by_id: dict[int, HFSession] | None = None,
-        existing_by_host: dict[str, HFSession] | None = None,
         ttl: int = DEFAULT_TTL,
         max_entries: int = DEFAULT_MAX_ENTRIES,
     ) -> None:
-        self._by_id = {} if existing_by_id is None else existing_by_id
-        self._by_host = {} if existing_by_host is None else existing_by_host
+        self._sessions: list[HFSession] = []
+        self._by_host: dict[str, HFSession] = {}
 
         self.ttl = ttl
         self.max_entries = max_entries
@@ -56,7 +61,7 @@ class HFSessionList:
 
         removed = []
 
-        # remove() renumbers _by_id, so iterate over a copy
+        # remove() mutates _by_host, so iterate over a copy
         for session in list(self._by_host.values()):
             if now - session.last_seen < self.ttl:
                 continue
@@ -79,12 +84,13 @@ class HFSessionList:
             return
 
         self._by_host[session.hostname] = session
-        self._renumber()
+        self._sessions.append(session)
 
     def get_by_id(self, ID: int) -> HFSession | None:
         """Returns a session by ID, if it exists."""
-        if ID in self._by_id:
-            return self._by_id[ID]
+        # a negative ID would otherwise index from the end of the list
+        if 0 <= ID < len(self._sessions):
+            return self._sessions[ID]
 
         return None
 
@@ -99,16 +105,4 @@ class HFSessionList:
         """Removes a session from the list."""
         if session.hostname in self._by_host:
             del self._by_host[session.hostname]
-            self._renumber()
-
-    def _renumber(self):
-        """
-        Renumbers the session IDs to ensure they remain contiguous.
-
-        The client asks for IDs 0..count-1 where count is the first "info" int, and uses the ID in each record as its table index.
-        """
-        self._by_id.clear()
-
-        for i, session in enumerate(self._by_host.values()):
-            session.ID = i
-            self._by_id[session.ID] = session
+            self._sessions.remove(session)

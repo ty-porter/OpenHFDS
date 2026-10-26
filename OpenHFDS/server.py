@@ -12,7 +12,7 @@ def serve(sock: socket.socket, sessions: HFSessionList) -> None:
         try:
             for session in sessions.expire():
                 Logger.info(
-                    f"Expire: session {session.ID} ({session.hostname}) last seen at {datetime.fromtimestamp(session.last_seen).isoformat()}"
+                    f"Expire: session <{session.hostname}> last seen at {datetime.fromtimestamp(session.last_seen).isoformat()}"
                 )
         except Exception as e:
             Logger.exception(e)
