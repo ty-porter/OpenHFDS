@@ -1,7 +1,11 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "OpenHFDS"
 dynamic = ["version"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 description = "An open implementation of HellFighter Directory Server"
 readme = "README.md"
 license = "MIT"
@@ -9,10 +13,12 @@ authors = [
     { name = "Tyler Porter", email = "tyler.b.porter@gmail.com" },
 ]
 keywords = [
-
+    "hellfighter",
+    "directory-server",
+    "udp",
 ]
 classifiers = [
-    "Development Status :: 3 - Apha",
+    "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: Other Audience",
@@ -25,8 +31,19 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/ty-porter/OpenHFDS"
 
+[project.scripts]
+openhfds = "OpenHFDS.server:main"
+
 [tool.black]
-target-version = ["py310"]
+target-version = ["py311"]
+
+[tool.hatch.version]
+path = "OpenHFDS/version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "OpenHFDS",
+]
 
 [dependency-groups]
 dev = [

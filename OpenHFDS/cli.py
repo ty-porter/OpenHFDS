@@ -28,7 +28,7 @@ def _int_in_range(name: str, low: int, high: int | None = None):
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="openhfds.py",
+        prog="openhfds",
         description="HellFighter directory server: lists hosted game sessions for the game's server browser.",
     )
     parser.add_argument(
