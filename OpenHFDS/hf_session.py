@@ -149,7 +149,6 @@ class HFSessionList:
             del self._by_host[session.hostname]
             self._sessions.remove(session)
 
-
     def spoof(self, n: int, seed: int | None = None) -> None:
         """
         Fills the list with up to n made-up sessions, for trying out the game's server browser without real hosts.
